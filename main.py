@@ -84,6 +84,7 @@ def export_txt():
         download_name='vlsm_results.txt'
     )
 
+
 @app.route('/export_pdf', methods=['POST'])
 def export_pdf():
     try:
@@ -142,6 +143,7 @@ def export_pdf():
         )
     except Exception as e:
         return f"Błąd podczas generowania pliku PDF: {str(e)}", 500
+
 
 
 
