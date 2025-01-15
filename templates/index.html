@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podział Sieci (VLSM)</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Podział Sieci (VLSM)</h1>
+        <form method="post" id="vlsm-form">
+            <div class="form-group">
+                <label for="network">Adres sieci (np. 192.168.1.0/24):</label>
+                <input type="text" name="network" id="network" required>
+            </div>
+            <div class="form-group">
+                <label for="hosts">Liczba hostów dla podsieci (np. 50, 20, 10):</label>
+                <input type="text" name="hosts" id="hosts" required>
+            </div>
+            <button type="button" id="calculate" onclick="validateForm()">Oblicz</button>
+        </form>
+
+
+        <div id="error-modal" style="display:none;">
+            <div class="modal-content">
+                <p id="error-message"></p>
+                <button onclick="closeModal()">OK</button>
+            </div>
+        </div>
+
+        {% if error_message %}
+            <p style="color: red;">{{ error_message }}</p>
+        {% endif %}
+
+        {% if results %}
+            <h2>Wyniki:</h2>
+            {% for subnet in results %}
+                <div class="subnet-block">
+                    <h3>Podsieć {{ loop.index }}</h3>
+                    <p><strong>Adres sieci:</strong> {{ subnet.network_address }}</p>
+                    <p><strong>Zakres hostów:</strong> {{ subnet.first_host }} - {{ subnet.last_host }}</p>
+                    <p><strong>Adres rozgłoszeniowy:</strong> {{ subnet.broadcast_address }}</p>
+                    <p><strong>Liczba hostów:</strong> {{ subnet.total_hosts }}</p>
+                </div>
+            {% endfor %}
+
+            <form method="post" action="/export_txt">
+                <textarea name="data" hidden>
+                    {% for subnet in results %}
+Podsieć {{ loop.index }}
+Adres sieci: {{ subnet.network_address }}
+Zakres hostów: {{ subnet.first_host }} - {{ subnet.last_host }}
+Adres rozgłoszeniowy: {{ subnet.broadcast_address }}
+Liczba hostów: {{ subnet.total_hosts }}
+
+                    {% endfor %}
+                </textarea>
+                <button type="submit" id="export_txt">Eksportuj do pliku TXT</button>
+            </form>
+
+            <form method="post" action="/export_pdf">
+                <textarea name="data" hidden>
+                    {% for subnet in results %}
+Podsieć {{ loop.index }}
+Adres sieci: {{ subnet.network_address }}
+Zakres hostów: {{ subnet.first_host }} - {{ subnet.last_host }}
+Adres rozgłoszeniowy: {{ subnet.broadcast_address }}
+Liczba hostów: {{ subnet.total_hosts }}
+
+                    {% endfor %}
+                </textarea>
+                <button type="submit" id="export_pdf">Eksportuj do pliku PDF</button>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>
