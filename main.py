@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, send_file, jsonify
 import ipaddress
 import io
 from fpdf import FPDF
+import os
+os.environ["LC_ALL"] = "en_US.UTF-8"
+os.environ["LANG"] = "en_US.UTF-8"
 
 app = Flask(__name__)
 
