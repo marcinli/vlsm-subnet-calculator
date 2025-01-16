@@ -103,26 +103,41 @@ def export_pdf():
 
         # Ścieżka do czcionek
         font_path = os.path.join("static", "fonts", "LiberationSans-Regular.ttf")
+        bold_font_path = os.path.join("static", "fonts", "LiberationSans-Bold.ttf")
 
         # Debugowanie: sprawdzanie czcionek
         print("Zawartość katalogu czcionek:", os.listdir("./static/fonts"))
         print("Ścieżka do LiberationSans-Regular.ttf:", font_path)
         print("Plik istnieje:", os.path.exists(font_path))
 
-        # Dodanie czcionki Liberation Sans
+        # Dodanie czcionek
         pdf.add_font("LiberationSans", "", font_path, uni=True)
-        pdf.set_font("LiberationSans", "", 12)
+        pdf.add_font("LiberationSans", "B", bold_font_path, uni=True)
 
+        pdf.set_left_margin(10)
+        pdf.set_right_margin(10)
+        pdf.set_auto_page_break(auto=True, margin=10)
+
+        # Tytuł PDF
         pdf.set_font("LiberationSans", "B", 14)
         pdf.cell(0, 10, "Wyniki Podziału Sieci (VLSM)", ln=True, align="C")
         pdf.ln(10)
 
+        # Przetwarzanie danych
         lines = data.splitlines()
         for line in lines:
             line = line.strip().encode('utf-8').decode('utf-8')  # Wymuszenie UTF-8
-            pdf.multi_cell(190, 8, txt=line, align="L")
+
+            if line.startswith("Podsieć"):
+                pdf.set_font("LiberationSans", "B", 12)
+                pdf.multi_cell(190, 8, txt=line, align="L")
+            else:
+                pdf.set_font("LiberationSans", "", 12)
+                pdf.multi_cell(190, 8, txt=line, align="L")
+
             pdf.ln(1)
 
+        # Zapisanie PDF
         output = io.BytesIO()
         pdf.output(output)
         output.seek(0)
