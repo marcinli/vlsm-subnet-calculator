@@ -90,7 +90,7 @@ def export_txt():
     except Exception as e:
         return f"Błąd podczas generowania pliku TXT: {str(e)}", 500
 
-@app.route('/export_pdf', methods=['POST'])
+app.route('/export_pdf', methods=['POST'])
 def export_pdf():
     try:
         data = request.form.get('data')
@@ -101,38 +101,26 @@ def export_pdf():
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
 
-        # Dodanie czcionek Unicode
-        font_path = os.path.join("static", "fonts", "DejaVuSans.ttf")
-        bold_font_path = os.path.join("static", "fonts", "DejaVuSans-Bold.ttf")
+        # Ścieżka do czcionek
+        font_path = os.path.join("static", "fonts", "LiberationSans-Regular.ttf")
 
-        print("Pliki w katalogu fonts:", os.listdir("./static/fonts"))  # Debug
+        # Debugowanie: sprawdzanie czcionek
+        print("Zawartość katalogu czcionek:", os.listdir("./static/fonts"))
+        print("Ścieżka do LiberationSans-Regular.ttf:", font_path)
+        print("Plik istnieje:", os.path.exists(font_path))
 
-        pdf.add_font("DejaVu", "", font_path, uni=True)
-        pdf.add_font("DejaVu", "B", bold_font_path, uni=True)
+        # Dodanie czcionki Liberation Sans
+        pdf.add_font("LiberationSans", "", font_path, uni=True)
+        pdf.set_font("LiberationSans", "", 12)
 
-        pdf.set_left_margin(10)
-        pdf.set_right_margin(10)
-        pdf.set_auto_page_break(auto=True, margin=10)
-
-        pdf.set_font("DejaVu", "B", 14)
+        pdf.set_font("LiberationSans", "B", 14)
         pdf.cell(0, 10, "Wyniki Podziału Sieci (VLSM)", ln=True, align="C")
-        pdf.ln(10)
-        
-        pdf.set_font("DejaVu", "", 12)
-        pdf.cell(0, 10, "Test polskich znaków: ąćęłńóśźż", ln=True, align="L")
         pdf.ln(10)
 
         lines = data.splitlines()
         for line in lines:
             line = line.strip().encode('utf-8').decode('utf-8')  # Wymuszenie UTF-8
-
-            if line.startswith("Podsieć"):
-                pdf.set_font("DejaVu", "B", 12)
-                pdf.multi_cell(190, 8, txt=line, align="L")
-            else:
-                pdf.set_font("DejaVu", "", 12)
-                pdf.multi_cell(190, 8, txt=line, align="L")
-
+            pdf.multi_cell(190, 8, txt=line, align="L")
             pdf.ln(1)
 
         output = io.BytesIO()
@@ -147,6 +135,6 @@ def export_pdf():
         )
     except Exception as e:
         return f"Błąd podczas generowania pliku PDF: {str(e)}", 500
-
+        
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
