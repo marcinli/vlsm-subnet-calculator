@@ -90,7 +90,7 @@ def export_txt():
     except Exception as e:
         return f"Błąd podczas generowania pliku TXT: {str(e)}", 500
 
-app.route('/export_pdf', methods=['POST'])
+@app.route('/export_pdf', methods=['POST'])
 def export_pdf():
     try:
         data = request.form.get('data')
