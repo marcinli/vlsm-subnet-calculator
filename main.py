@@ -104,6 +104,9 @@ def export_pdf():
         # Dodanie czcionek Unicode
         font_path = os.path.join("static", "fonts", "DejaVuSans.ttf")
         bold_font_path = os.path.join("static", "fonts", "DejaVuSans-Bold.ttf")
+
+        print("Pliki w katalogu fonts:", os.listdir("./static/fonts"))  # Debug
+
         pdf.add_font("DejaVu", "", font_path, uni=True)
         pdf.add_font("DejaVu", "B", bold_font_path, uni=True)
 
@@ -118,6 +121,7 @@ def export_pdf():
         lines = data.splitlines()
         for line in lines:
             line = line.strip().encode('utf-8').decode('utf-8')  # Wymuszenie UTF-8
+
             if line.startswith("Podsieć"):
                 pdf.set_font("DejaVu", "B", 12)
                 pdf.multi_cell(190, 8, txt=line, align="L")
