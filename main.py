@@ -117,9 +117,11 @@ def export_pdf():
         pdf.set_font("DejaVu", "B", 14)
         pdf.cell(0, 10, "Wyniki Podziału Sieci (VLSM)", ln=True, align="C")
         pdf.ln(10)
-pdf.set_font("DejaVu", "", 12)
-pdf.cell(0, 10, "Test polskich znaków: ąćęłńóśźż", ln=True, align="L")
-pdf.ln(10)
+        
+        pdf.set_font("DejaVu", "", 12)
+        pdf.cell(0, 10, "Test polskich znaków: ąćęłńóśźż", ln=True, align="L")
+        pdf.ln(10)
+
         lines = data.splitlines()
         for line in lines:
             line = line.strip().encode('utf-8').decode('utf-8')  # Wymuszenie UTF-8
