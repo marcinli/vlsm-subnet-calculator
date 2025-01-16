@@ -64,6 +64,32 @@ def index():
 
     return render_template('index.html', results=results, error_message=error_message)
 
+@app.route('/export_txt', methods=['POST'])
+def export_txt():
+    try:
+        # Pobranie danych z formularza
+        data = request.form.get('data')
+        if not data:
+            return "Brak danych do wygenerowania pliku TXT.", 400
+
+        # Konwersja danych na UTF-8 (jeśli potrzebne)
+        data = data.encode('utf-8').decode('utf-8')
+
+        # Tworzenie pliku TXT w pamięci
+        output = io.StringIO()
+        output.write(data)
+        output.seek(0)
+
+        # Wysyłanie pliku do użytkownika
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype='text/plain',
+            as_attachment=True,
+            download_name='vlsm_results.txt'
+        )
+    except Exception as e:
+        return f"Błąd podczas generowania pliku TXT: {str(e)}", 500
+
 @app.route('/export_pdf', methods=['POST'])
 def export_pdf():
     try:
