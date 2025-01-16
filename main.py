@@ -3,6 +3,8 @@ import ipaddress
 import io
 from fpdf import FPDF
 import os
+
+# Wymuszenie obsługi UTF-8
 os.environ["LC_ALL"] = "en_US.UTF-8"
 os.environ["LANG"] = "en_US.UTF-8"
 
@@ -14,27 +16,21 @@ def calculate_vlsm(network, hosts):
     subnets = []
     current_address = network.network_address  # Start od adresu sieci
 
-    # Obliczanie całkowitej liczby wymaganych adresów (uwzględniając VLSM)
     total_required_addresses = sum(2 ** (32 - (32 - (h + 2 - 1).bit_length())) for h in hosts)
-    available_addresses = network.num_addresses  # Liczba dostępnych adresów w sieci
+    available_addresses = network.num_addresses
 
-    # Jeśli wymagane adresy przekraczają dostępne – natychmiastowy błąd
     if total_required_addresses > available_addresses:
         return None, f"⚠️ Wymagana liczba adresów ({total_required_addresses}) przekracza dostępny zakres {network}. Proszę dostosować adres i maskę."
 
     try:
         for h in hosts:
-            needed_hosts = h + 2  # hosty + adres sieci + broadcast
+            needed_hosts = h + 2
             new_prefix = 32 - (needed_hosts - 1).bit_length()
 
-            # Obliczanie nowej podsieci
             subnet = ipaddress.ip_network(f"{current_address}/{new_prefix}", strict=False)
-
-            # Jeśli podsieć przekracza zakres sieci bazowej – błąd
             if subnet.broadcast_address > network.broadcast_address:
                 return None, f"⚠️ Nie można przydzielić {h} hostów w sieci {network}. Proszę dostosować adres i maskę."
 
-            # Szczegółowe informacje o podsieci
             subnet_info = {
                 'network_address': f"{subnet.network_address}/{subnet.prefixlen}",
                 'broadcast_address': str(subnet.broadcast_address),
@@ -44,12 +40,11 @@ def calculate_vlsm(network, hosts):
             }
 
             subnets.append(subnet_info)
-            current_address = subnet.broadcast_address + 1  # Przesunięcie do następnej sieci
+            current_address = subnet.broadcast_address + 1
     except Exception as e:
         raise ValueError(f'Błąd przy obliczaniu VLSM: {str(e)}')
 
     return subnets, None
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -69,22 +64,6 @@ def index():
 
     return render_template('index.html', results=results, error_message=error_message)
 
-
-@app.route('/export_txt', methods=['POST'])
-def export_txt():
-    data = request.form.get('data')
-    file = io.StringIO()
-    file.write(data)
-    file.seek(0)
-
-    return send_file(
-        io.BytesIO(file.getvalue().encode()),
-        mimetype='text/plain',
-        as_attachment=True,
-        download_name='vlsm_results.txt'
-    )
-
-
 @app.route('/export_pdf', methods=['POST'])
 def export_pdf():
     try:
@@ -96,41 +75,32 @@ def export_pdf():
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
 
-        # Dodanie niestandardowych czcionek Unicode
-        pdf.add_font("DejaVu", "", "./static/fonts/DejaVuSans.ttf", uni=True)
-        pdf.add_font("DejaVu", "B", "./static/fonts/DejaVuSans-Bold.ttf", uni=True)
+        # Dodanie czcionek Unicode
+        font_path = os.path.join("static", "fonts", "DejaVuSans.ttf")
+        bold_font_path = os.path.join("static", "fonts", "DejaVuSans-Bold.ttf")
+        pdf.add_font("DejaVu", "", font_path, uni=True)
+        pdf.add_font("DejaVu", "B", bold_font_path, uni=True)
 
-        # Ustawienia marginesów i szerokości
-        left_margin = 10
-        right_margin = 10
-        page_width = 210  # Szerokość strony A4 w mm
-        effective_width = page_width - left_margin - right_margin
-
-        pdf.set_left_margin(left_margin)
-        pdf.set_right_margin(right_margin)
+        pdf.set_left_margin(10)
+        pdf.set_right_margin(10)
         pdf.set_auto_page_break(auto=True, margin=10)
 
-        # Dodanie tytułu dokumentu
-        pdf.set_font("DejaVu", "B", 14)  # Pogrubiona czcionka
+        pdf.set_font("DejaVu", "B", 14)
         pdf.cell(0, 10, "Wyniki Podziału Sieci (VLSM)", ln=True, align="C")
-        pdf.ln(10)  # Odstęp po tytule
+        pdf.ln(10)
 
-        # Przetwarzanie danych
         lines = data.splitlines()
         for line in lines:
-            line = line.strip()
-
-            # Ustawienie czcionki i dynamiczne łamanie linii
+            line = line.strip().encode('utf-8').decode('utf-8')  # Wymuszenie UTF-8
             if line.startswith("Podsieć"):
-                pdf.set_font("DejaVu", "B", 12)  # Pogrubiona czcionka
-                pdf.multi_cell(effective_width, 8, txt=line, align="L")  # Nagłówki
+                pdf.set_font("DejaVu", "B", 12)
+                pdf.multi_cell(190, 8, txt=line, align="L")
             else:
-                pdf.set_font("DejaVu", "", 12)  # Normalna czcionka
-                pdf.multi_cell(effective_width, 8, txt=line, align="L")  # Dane
+                pdf.set_font("DejaVu", "", 12)
+                pdf.multi_cell(190, 8, txt=line, align="L")
 
-            pdf.ln(1)  # Drobny odstęp między liniami
+            pdf.ln(1)
 
-        # Zapisanie PDF w pamięci
         output = io.BytesIO()
         pdf.output(output)
         output.seek(0)
@@ -143,30 +113,6 @@ def export_pdf():
         )
     except Exception as e:
         return f"Błąd podczas generowania pliku PDF: {str(e)}", 500
-
-
-
-
-
-
-@app.route('/validate', methods=['POST'])
-def validate():
-    try:
-        network = request.json.get('network')
-        hosts = request.json.get('hosts')
-
-        # Walidacja adresu IP
-        ipaddress.ip_network(network, strict=False)
-
-        # Walidacja hostów
-        for h in hosts:
-            if not isinstance(h, int) or h <= 0:
-                return jsonify({"error": f"Niewłaściwa liczba hostów: {h}"}), 400
-
-        return jsonify({"success": True}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
